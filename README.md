@@ -145,6 +145,7 @@ npm run dev:lan
 - `POST /api/leads/seed-demo`
 - `GET /api/leads/stats/summary`
 - `GET /api/leads/stats/charts`
+- `GET /api/leads/export.csv`
 
 ## Как пользоваться интерфейсом
 
@@ -155,7 +156,8 @@ npm run dev:lan
 5. В таблице:
 - `Edit` редактирует лид.
 - `Delete` удаляет лид.
-6. Смотрите верхние карточки и графики для аналитики.
+6. Нажмите `Export CSV`, чтобы скачать текущий список лидов с примененными фильтрами.
+7. Смотрите верхние карточки и графики для аналитики.
 
 ## Публичный деплой (кратко)
 
@@ -183,4 +185,5 @@ npm run dev:lan
 
 ## Документация по самостоятельной работе
 
+- `docs/DEPLOY_PRODUCTION.md` - пошаговый продакшен-деплой (Neon + Render + Vercel).
 - `docs/SELF_START_GUIDE.md` - детальная карта, как развивать проект и делать свои fullstack-проекты.
