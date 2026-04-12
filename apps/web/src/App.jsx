@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   createLead,
   deleteLead,
+  exportLeadsCsv,
   getCharts,
   getLeads,
   getSummary,
@@ -250,6 +251,19 @@ export default function App() {
     }
   }
 
+  async function handleExportCsv() {
+    try {
+      setLoading(true);
+      setMessage("");
+      await exportLeadsCsv(token, leadsQuery);
+      setMessage("CSV exported.");
+    } catch (error) {
+      setMessage(error.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="page">
       <header className="topbar">
@@ -303,6 +317,7 @@ export default function App() {
                 onReset={handleResetFilters}
                 onSeedDemo={() => handleSeedDemo(false)}
                 onReplaceWithDemo={() => handleSeedDemo(true)}
+                onExportCsv={handleExportCsv}
                 loading={loading}
               />
               <LeadsTable

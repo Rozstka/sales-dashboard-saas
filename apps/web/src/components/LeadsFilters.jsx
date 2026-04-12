@@ -4,6 +4,7 @@ export default function LeadsFilters({
   onReset,
   onSeedDemo,
   onReplaceWithDemo,
+  onExportCsv,
   loading
 }) {
   return (
@@ -26,6 +27,14 @@ export default function LeadsFilters({
             disabled={loading}
           >
             Replace with demo
+          </button>
+          <button
+            className="ghost-btn"
+            type="button"
+            onClick={onExportCsv}
+            disabled={loading}
+          >
+            Export CSV
           </button>
           <button
             className="ghost-btn"

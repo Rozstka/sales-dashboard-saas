@@ -1,5 +1,32 @@
 const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
+function buildLeadsQuery(filters = {}) {
+  const params = new URLSearchParams();
+
+  if (filters.search?.trim()) {
+    params.set("search", filters.search.trim());
+  }
+
+  if (filters.status && filters.status !== "all") {
+    params.set("status", filters.status);
+  }
+
+  if (filters.minValue !== undefined && filters.minValue !== null && filters.minValue !== "") {
+    params.set("minValue", String(filters.minValue));
+  }
+
+  if (filters.maxValue !== undefined && filters.maxValue !== null && filters.maxValue !== "") {
+    params.set("maxValue", String(filters.maxValue));
+  }
+
+  if (filters.sort) {
+    params.set("sort", filters.sort);
+  }
+
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+
 async function request(path, options = {}) {
   const response = await fetch(`${API_BASE}${path}`, {
     headers: {
@@ -34,30 +61,7 @@ export function loginUser(data) {
 }
 
 export function getLeads(token, filters = {}) {
-  const params = new URLSearchParams();
-
-  if (filters.search?.trim()) {
-    params.set("search", filters.search.trim());
-  }
-
-  if (filters.status && filters.status !== "all") {
-    params.set("status", filters.status);
-  }
-
-  if (filters.minValue !== undefined && filters.minValue !== null && filters.minValue !== "") {
-    params.set("minValue", String(filters.minValue));
-  }
-
-  if (filters.maxValue !== undefined && filters.maxValue !== null && filters.maxValue !== "") {
-    params.set("maxValue", String(filters.maxValue));
-  }
-
-  if (filters.sort) {
-    params.set("sort", filters.sort);
-  }
-
-  const query = params.toString();
-  const path = query ? `/leads?${query}` : "/leads";
+  const path = `/leads${buildLeadsQuery(filters)}`;
 
   return request(path, {
     headers: {
@@ -129,4 +133,37 @@ export function getCharts(token) {
       Authorization: `Bearer ${token}`
     }
   });
+}
+
+export async function exportLeadsCsv(token, filters = {}) {
+  const response = await fetch(`${API_BASE}/leads/export.csv${buildLeadsQuery(filters)}`, {
+    headers: {
+      Authorization: `Bearer ${token}`
+    }
+  });
+
+  if (!response.ok) {
+    let message = "CSV export failed";
+    try {
+      const payload = await response.json();
+      message = payload?.message || message;
+    } catch {
+      // Ignore parse failure and use fallback message.
+    }
+    throw new Error(message);
+  }
+
+  const contentDisposition = response.headers.get("content-disposition") || "";
+  const nameMatch = contentDisposition.match(/filename="?([^"]+)"?/i);
+  const filename = nameMatch?.[1] || "leads-export.csv";
+
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  URL.revokeObjectURL(objectUrl);
 }

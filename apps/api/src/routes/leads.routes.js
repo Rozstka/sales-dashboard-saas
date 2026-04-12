@@ -71,6 +71,59 @@ const listLeadsQuerySchema = z.object({
     .default("created_desc")
 });
 
+function buildLeadsQueryContext(userId, filters) {
+  const whereClauses = ["owner_id = $1"];
+  const values = [userId];
+  let placeholder = 2;
+
+  if (filters.search) {
+    whereClauses.push(
+      `(company_name ILIKE $${placeholder} OR contact_name ILIKE $${placeholder} OR COALESCE(email, '') ILIKE $${placeholder})`
+    );
+    values.push(`%${filters.search}%`);
+    placeholder += 1;
+  }
+
+  if (filters.status !== "all") {
+    whereClauses.push(`status = $${placeholder}`);
+    values.push(filters.status);
+    placeholder += 1;
+  }
+
+  if (filters.minValue !== undefined) {
+    whereClauses.push(`value >= $${placeholder}`);
+    values.push(filters.minValue);
+    placeholder += 1;
+  }
+
+  if (filters.maxValue !== undefined) {
+    whereClauses.push(`value <= $${placeholder}`);
+    values.push(filters.maxValue);
+    placeholder += 1;
+  }
+
+  const orderBy = leadSortOptions[filters.sort] || leadSortOptions.created_desc;
+
+  return {
+    whereSql: whereClauses.join(" AND "),
+    values,
+    orderBy
+  };
+}
+
+function escapeCsvValue(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  const normalized = String(value).replace(/"/g, "\"\"");
+  if (/[",\n\r]/.test(normalized)) {
+    return `"${normalized}"`;
+  }
+
+  return normalized;
+}
+
 leadsRouter.use(authGuard);
 
 leadsRouter.get("/stats/summary", async (req, res, next) => {
@@ -168,37 +221,7 @@ leadsRouter.get("/stats/charts", async (req, res, next) => {
 leadsRouter.get("/", async (req, res, next) => {
   try {
     const filters = listLeadsQuerySchema.parse(req.query);
-    const whereClauses = ["owner_id = $1"];
-    const values = [req.user.id];
-    let placeholder = 2;
-
-    if (filters.search) {
-      whereClauses.push(
-        `(company_name ILIKE $${placeholder} OR contact_name ILIKE $${placeholder} OR COALESCE(email, '') ILIKE $${placeholder})`
-      );
-      values.push(`%${filters.search}%`);
-      placeholder += 1;
-    }
-
-    if (filters.status !== "all") {
-      whereClauses.push(`status = $${placeholder}`);
-      values.push(filters.status);
-      placeholder += 1;
-    }
-
-    if (filters.minValue !== undefined) {
-      whereClauses.push(`value >= $${placeholder}`);
-      values.push(filters.minValue);
-      placeholder += 1;
-    }
-
-    if (filters.maxValue !== undefined) {
-      whereClauses.push(`value <= $${placeholder}`);
-      values.push(filters.maxValue);
-      placeholder += 1;
-    }
-
-    const orderBy = leadSortOptions[filters.sort] || leadSortOptions.created_desc;
+    const { whereSql, values, orderBy } = buildLeadsQueryContext(req.user.id, filters);
     const result = await query(
       `
       SELECT
@@ -211,13 +234,73 @@ leadsRouter.get("/", async (req, res, next) => {
         value,
         created_at
       FROM leads
-      WHERE ${whereClauses.join(" AND ")}
+      WHERE ${whereSql}
       ORDER BY ${orderBy}
       `,
       values
     );
 
     return res.json(result.rows.map(mapLeadRow));
+  } catch (error) {
+    return next(error);
+  }
+});
+
+leadsRouter.get("/export.csv", async (req, res, next) => {
+  try {
+    const filters = listLeadsQuerySchema.parse(req.query);
+    const { whereSql, values, orderBy } = buildLeadsQueryContext(req.user.id, filters);
+    const result = await query(
+      `
+      SELECT
+        id,
+        company_name,
+        contact_name,
+        email,
+        phone,
+        status,
+        value,
+        created_at
+      FROM leads
+      WHERE ${whereSql}
+      ORDER BY ${orderBy}
+      `,
+      values
+    );
+
+    const columns = [
+      "ID",
+      "Company",
+      "Contact Name",
+      "Email",
+      "Phone",
+      "Status",
+      "Value",
+      "Created At (ISO)"
+    ];
+
+    const csvRows = [columns.join(",")];
+    for (const row of result.rows) {
+      const lineValues = [
+        row.id,
+        row.company_name,
+        row.contact_name,
+        row.email,
+        row.phone,
+        row.status,
+        row.value,
+        row.created_at ? new Date(row.created_at).toISOString() : ""
+      ];
+      csvRows.push(lineValues.map(escapeCsvValue).join(","));
+    }
+
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+    const filename = `leads-${timestamp}.csv`;
+    const csvContent = `\uFEFF${csvRows.join("\r\n")}`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.status(200).send(csvContent);
   } catch (error) {
     return next(error);
   }
