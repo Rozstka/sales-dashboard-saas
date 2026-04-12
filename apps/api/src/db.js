@@ -1,4 +1,5 @@
 import pg from "pg";
+import { readFile } from "node:fs/promises";
 import { config } from "./config.js";
 
 const { Pool } = pg;
@@ -13,4 +14,9 @@ export async function query(text, params) {
 
 export async function checkDbConnection() {
   await query("SELECT 1");
+}
+
+export async function runSchemaFromFile(schemaFileUrl) {
+  const sql = await readFile(schemaFileUrl, "utf8");
+  await query(sql);
 }

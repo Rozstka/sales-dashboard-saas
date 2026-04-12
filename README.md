@@ -171,6 +171,7 @@ npm run dev:lan
 
 1. Деплой PostgreSQL и получите `DATABASE_URL`.
 2. Деплой API и задайте env (`DATABASE_URL`, `JWT_SECRET`, `CLIENT_ORIGIN`).
+   - API автоматически применяет `apps/api/sql/init.sql` при старте.
 3. Деплой frontend и задайте `VITE_API_URL`.
 4. В `CLIENT_ORIGIN` добавьте URL фронтенда.
 

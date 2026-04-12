@@ -25,7 +25,9 @@
 
 ## 4. Применить SQL-схему в Neon
 
-Нужно один раз создать таблицы из `apps/api/sql/init.sql`.
+Обычно вручную делать ничего не нужно:
+- API при старте автоматически применяет `apps/api/sql/init.sql` (идемпотентно).
+- Если хотите, можно применить схему вручную заранее.
 
 Вариант A (через SQL Editor в Neon):
 1. Откройте SQL Editor.
@@ -100,6 +102,6 @@ CLIENT_ORIGIN=https://sales-dashboard-saas.vercel.app,https://staging.example.co
 2. `password authentication failed`:
    - неверный `DATABASE_URL`.
 3. `relation "users" does not exist`:
-   - не применили `apps/api/sql/init.sql`.
+   - проверьте логи API: не удалось применить `apps/api/sql/init.sql` при старте.
 4. Frontend деплоится, но API недоступен:
    - проверьте `VITE_API_URL` в Vercel.

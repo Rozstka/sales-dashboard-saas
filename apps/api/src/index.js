@@ -1,5 +1,5 @@
 import { app } from "./app.js";
-import { checkDbConnection } from "./db.js";
+import { checkDbConnection, runSchemaFromFile } from "./db.js";
 import { config } from "./config.js";
 
 function getDatabaseTarget(connectionString) {
@@ -14,6 +14,7 @@ function getDatabaseTarget(connectionString) {
 async function bootstrap() {
   try {
     await checkDbConnection();
+    await runSchemaFromFile(new URL("../sql/init.sql", import.meta.url));
     app.listen(config.port, () => {
       console.log(`API started on http://localhost:${config.port}`);
     });
