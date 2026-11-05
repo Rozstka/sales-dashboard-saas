@@ -12,9 +12,17 @@
     "dev:web": "npm run dev -w apps/web",
     "db:up": "docker compose up -d db",
     "db:down": "docker compose down",
-    "db:logs": "docker compose logs -f db"
+    "db:logs": "docker compose logs -f db",
+    "test": "node --test tests/*.test.mjs",
+    "build": "npm run build -w apps/web"
   },
   "devDependencies": {
     "concurrently": "^9.0.1"
+  },
+  "overrides": {
+    "qs": "^6.17.1"
+  },
+  "engines": {
+    "node": ">=22.12"
   }
 }

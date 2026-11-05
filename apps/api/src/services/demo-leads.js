@@ -1,10 +1,10 @@
-import { query } from "../db.js";
+import { transaction } from "../db.js";
 
 const demoLeadTemplates = [
   {
     companyName: "Nova Logistics",
     contactName: "Emma Walker",
-    email: "emma@novalogistics.com",
+    email: "emma@example.invalid",
     phone: "+1-202-555-0115",
     status: "new",
     value: 2400
@@ -12,7 +12,7 @@ const demoLeadTemplates = [
   {
     companyName: "Atlas Retail",
     contactName: "Daniel Price",
-    email: "daniel@atlasretail.io",
+    email: "daniel@example.invalid",
     phone: "+1-202-555-0116",
     status: "in_progress",
     value: 6800
@@ -20,7 +20,7 @@ const demoLeadTemplates = [
   {
     companyName: "Bright Health",
     contactName: "Sophia Reed",
-    email: "sophia@brighthealth.app",
+    email: "sophia@example.invalid",
     phone: "+1-202-555-0117",
     status: "won",
     value: 15900
@@ -28,7 +28,7 @@ const demoLeadTemplates = [
   {
     companyName: "Orbit Finance",
     contactName: "Liam Brooks",
-    email: "liam@orbitfinance.co",
+    email: "liam@example.invalid",
     phone: "+1-202-555-0118",
     status: "lost",
     value: 4200
@@ -36,7 +36,7 @@ const demoLeadTemplates = [
   {
     companyName: "GreenGrid Energy",
     contactName: "Mia Stone",
-    email: "mia@greengrid.energy",
+    email: "mia@example.invalid",
     phone: "+1-202-555-0119",
     status: "in_progress",
     value: 9800
@@ -44,7 +44,7 @@ const demoLeadTemplates = [
   {
     companyName: "Skyline Systems",
     contactName: "Noah Carter",
-    email: "noah@skylinesystems.dev",
+    email: "noah@example.invalid",
     phone: "+1-202-555-0120",
     status: "won",
     value: 12300
@@ -65,6 +65,7 @@ function mapLeadRow(row) {
 }
 
 export async function seedDemoLeadsForUser(userId, options = {}) {
+  return transaction(async (query) => {
   const clearExisting = Boolean(options.clearExisting);
 
   if (clearExisting) {
@@ -94,4 +95,5 @@ export async function seedDemoLeadsForUser(userId, options = {}) {
   }
 
   return insertedLeads;
+  });
 }

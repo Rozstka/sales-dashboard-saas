@@ -57,7 +57,7 @@ export default function AuthForm({ mode, loading, onSubmit }) {
             setForm((prev) => ({ ...prev, password: event.target.value }))
           }
           required
-          minLength={6}
+          minLength={mode === "register" ? 8 : 6}
         />
       </label>
 

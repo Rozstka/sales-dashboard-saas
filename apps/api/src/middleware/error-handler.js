@@ -10,6 +10,8 @@ export function errorHandler(error, req, res, next) {
     });
   }
 
-  console.error(error);
+  if (error?.type === "entity.parse.failed") return res.status(400).json({ message: "Invalid JSON" });
+  if (error?.type === "entity.too.large") return res.status(413).json({ message: "Request too large" });
+  console.error("Request failed", error?.code || error?.name);
   return res.status(500).json({ message: "Internal server error" });
 }

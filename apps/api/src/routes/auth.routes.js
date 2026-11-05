@@ -2,7 +2,6 @@ import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { query } from "../db.js";
-import { seedDemoLeadsForUser } from "../services/demo-leads.js";
 import { signToken } from "../services/jwt.js";
 
 export const authRouter = Router();
@@ -10,12 +9,12 @@ export const authRouter = Router();
 const registerSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
   email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(6).max(120)
+  password: z.string().min(8).refine((value) => Buffer.byteLength(value, "utf8") <= 72, "Password must be at most 72 UTF-8 bytes")
 });
 
 const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(6).max(120)
+  password: z.string().min(6).refine((value) => Buffer.byteLength(value, "utf8") <= 72, "Password must be at most 72 UTF-8 bytes")
 });
 
 authRouter.post("/register", async (req, res, next) => {
@@ -40,7 +39,6 @@ authRouter.post("/register", async (req, res, next) => {
     );
 
     const user = createdUser.rows[0];
-    await seedDemoLeadsForUser(user.id);
     const token = signToken(user);
 
     return res.status(201).json({
@@ -53,6 +51,7 @@ authRouter.post("/register", async (req, res, next) => {
       }
     });
   } catch (error) {
+    if (error.code === "23505") return res.status(409).json({ message: "Email already in use" });
     return next(error);
   }
 });

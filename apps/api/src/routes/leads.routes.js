@@ -34,7 +34,7 @@ function mapLeadRow(row) {
 
 function parseLeadId(rawLeadId) {
   const leadId = Number(rawLeadId);
-  return Number.isNaN(leadId) ? null : leadId;
+  return Number.isSafeInteger(leadId) && leadId > 0 && leadId <= 2147483647 ? leadId : null;
 }
 
 const leadSchema = z.object({
@@ -116,7 +116,8 @@ function escapeCsvValue(value) {
     return "";
   }
 
-  const normalized = String(value).replace(/"/g, "\"\"");
+  const safe = typeof value === "string" && /^[\s]*[=+@-]/.test(value) ? "'" + value : value;
+  const normalized = String(safe).replace(/"/g, "\"\"");
   if (/[",\n\r]/.test(normalized)) {
     return `"${normalized}"`;
   }
